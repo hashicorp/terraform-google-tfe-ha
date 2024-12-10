@@ -2,14 +2,24 @@
 # SPDX-License-Identifier: MPL-2.0
 
 locals {
-  disk_device_name              = "sdb"
-  enable_airgap                 = var.airgap_url == null && var.tfe_license_bootstrap_airgap_package_path != null
-  enable_external               = var.operational_mode == "external" || var.operational_mode == "active-active"
-  enable_database_module        = local.enable_external
-  enable_disk                   = var.operational_mode == "disk"
-  enable_networking_module      = var.network == null
-  enable_object_storage_module  = local.enable_external
-  enable_redis_module           = var.operational_mode == "active-active"
+  disk_device_name         = "sdb"
+  enable_airgap            = var.airgap_url == null && var.tfe_license_bootstrap_airgap_package_path != null
+  enable_external          = var.operational_mode == "external" || var.operational_mode == "active-active"
+  enable_database_module   = local.enable_external && var.database_host == null
+  enable_disk              = var.operational_mode == "disk"
+  enable_networking_module = var.network == null
+  enable_redis_module      = var.operational_mode == "active-active"
+  activate_apis = compact([
+    "iam.googleapis.com",
+    "logging.googleapis.com",
+    "compute.googleapis.com",
+    (local.enable_database_module ? "sqladmin.googleapis.com" : null),
+    (local.enable_networking_module ? "networkmanagement.googleapis.com" : null),
+    (local.enable_networking_module ? "servicenetworking.googleapis.com" : null),
+    (local.enable_redis_module ? "redis.googleapis.com" : null),
+  ])
+  enable_object_storage_module = local.enable_external
+
   service_networking_connection = try(module.networking[0].service_networking_connection, { network = var.network })
   subnetwork                    = try(module.networking[0].subnetwork, { self_link = var.subnetwork })
 
@@ -88,10 +98,10 @@ locals {
   database = try(
     module.database[0],
     {
-      dbname   = null
-      netloc   = null
-      password = null
-      user     = null
+      dbname   = var.database_name
+      netloc   = var.database_host
+      password = var.database_password
+      user     = var.database_user
     }
   )
 }

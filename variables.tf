@@ -151,6 +151,18 @@ variable "subnetwork" {
 
 # DATABASE
 # --------
+variable "database_host" {
+  default     = null
+  description = "Database host"
+  type        = string
+}
+
+variable "database_password" {
+  default     = null
+  description = "Only needed if we provide a database host."
+  type        = string
+}
+
 variable "database_availability_type" {
   default     = "ZONAL"
   description = "Database Availability Type"
